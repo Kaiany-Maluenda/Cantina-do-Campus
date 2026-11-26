@@ -2,46 +2,43 @@
 
 const db = require("../database/connection"); // Importa a conexão com o banco de dados usando o Knex
 
-async function vendasPorCategoria(req, res) { // Função para gerar relatório de vendas por categoria, incluindo total vendido, quantidade de itens vendidos e total de pedidos por categoria
+async function vendasPorCategoria(req, res) {
   try {
-    const dados = await db("pedidos") // Inicia a consulta na tabela "pedidos" e realiza um join com a tabela "produtos" para agrupar os resultados por categoria de produto
-      .join("produtos", "pedidos.produto_id", "produtos.id") 
-      .select(
-        "produtos.categoria",
-        db.sum("pedidos.valor_total as total_vendido"),
-        db.sum("pedidos.quantidade as quantidade_itens"),
-        db.count("pedidos.id as total_pedidos")
-      )
+    const dados = await db("pedidos")
+      .join("produtos", "pedidos.produto_id", "produtos.id")
+      .select("produtos.categoria")
+      .sum({ total_vendido: "pedidos.valor_total" })
+      .sum({ quantidade_itens: "pedidos.quantidade" })
+      .count({ total_pedidos: "pedidos.id" })
       .groupBy("produtos.categoria")
       .orderBy("produtos.categoria", "asc");
 
     return res.status(200).json(dados);
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: "Erro ao gerar relatório de vendas por categoria." });
   }
 }
 
-async function topProdutos(req, res) { // Função para gerar relatório dos 5 produtos mais vendidos, incluindo quantidade vendida e total vendido
+async function topProdutos(req, res) {
   try {
     const dados = await db("pedidos")
       .join("produtos", "pedidos.produto_id", "produtos.id")
-      .select(
-        "produtos.id",
-        "produtos.nome",
-        db.sum("pedidos.quantidade as quantidade_vendida"),
-        db.sum("pedidos.valor_total as total_vendido")
-      )
+      .select("produtos.id", "produtos.nome")
+      .sum({ quantidade_vendida: "pedidos.quantidade" })
+      .sum({ total_vendido: "pedidos.valor_total" })
       .groupBy("produtos.id", "produtos.nome")
       .orderBy("quantidade_vendida", "desc")
       .limit(5);
 
     return res.status(200).json(dados);
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: "Erro ao gerar relatório de top produtos." });
   }
 }
 
-async function faturamento(req, res) { // Função para calcular o faturamento total e o número de pedidos em um período específico, com base nos parâmetros data_inicio e data_fim fornecidos na query string
+async function faturamento(req, res) {
   try {
     const { data_inicio, data_fim } = req.query;
 
@@ -51,12 +48,13 @@ async function faturamento(req, res) { // Função para calcular o faturamento t
       });
     }
 
+    const inicio = data_inicio.length === 10 ? `${data_inicio} 00:00:00` : data_inicio;
+    const fim = data_fim.length === 10 ? `${data_fim} 23:59:59` : data_fim;
+
     const [resumo] = await db("pedidos")
-      .select(
-        db.sum("valor_total as faturamento_total"),
-        db.count("id as total_pedidos")
-      )
-      .whereBetween("created_at", [data_inicio, data_fim]);
+      .sum({ faturamento_total: "valor_total" })
+      .count({ total_pedidos: "id" })
+      .whereBetween("created_at", [inicio, fim]);
 
     return res.status(200).json({
       data_inicio,
@@ -65,6 +63,7 @@ async function faturamento(req, res) { // Função para calcular o faturamento t
       total_pedidos: Number(resumo.total_pedidos || 0),
     });
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: "Erro ao calcular faturamento por período." });
   }
 }
