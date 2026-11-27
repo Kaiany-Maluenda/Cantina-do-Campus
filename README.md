@@ -227,19 +227,9 @@ ___________________________________________________________________
       "total_pedidos": 5
     }
     ```
-
-## Uso de Transações com `db.transaction()`
-
-No controller de pedidos (`pedidosControllers.js`), utilizamos `db.transaction(async (trx) => { ... })` em duas operações que exigem mais de uma alteração no banco de dados:
-
-1. **Criação de pedido (`POST /api/pedidos`):** consulta o produto, valida se está ativo (`ativo = true`) e se há estoque suficiente (`estoque >= quantidade`), calcula `valor_total` no servidor com base no preço do banco (ignorando qualquer `valor_total` enviado pelo cliente), debita a quantidade do estoque (`decrement`) e insere o pedido na tabela `pedidos`.
-2. **Remoção/cancelamento de pedido (`DELETE /api/pedidos/:id`):** localiza o pedido, devolve a quantidade ao estoque do produto (`increment`) e exclui o pedido da tabela `pedidos`.
-
-A transação garante **atomicidade** (tudo ou nada): se houver qualquer falha no meio do processo, nenhuma alteração parcial fica salva — evitando um pedido criado sem baixar o estoque ou um pedido removido sem devolver os itens ao estoque.
-
 ___________________________________________________________________
 
-Uso de Transações com db.transaction()
+# *Uso de Transações com db.transaction()*
 
 No controller de pedidos (pedidosControllers.js), utilizamos db.transaction(async (trx) => { ... }) em duas operações críticas que exigem mais de uma alteração no banco de dados:
 
