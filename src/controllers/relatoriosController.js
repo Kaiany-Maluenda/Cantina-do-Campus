@@ -15,7 +15,7 @@ async function vendasPorCategoria(req, res) {
 
     return res.status(200).json(dados);
   } catch (err) {
-    console.error(err);
+    console.error(err); // Registra o erro detalhado no console do servidor para depuração
     return res.status(500).json({ error: "Erro ao gerar relatório de vendas por categoria." });
   }
 }
