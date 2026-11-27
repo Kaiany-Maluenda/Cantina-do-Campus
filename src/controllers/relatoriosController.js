@@ -48,6 +48,7 @@ async function faturamento(req, res) {
       });
     }
 
+    // Garante o dia inteiro quando a data vem apenas no formato YYYY-MM-DD (10 caracteres)
     const inicio = data_inicio.length === 10 ? `${data_inicio} 00:00:00` : data_inicio;
     const fim = data_fim.length === 10 ? `${data_fim} 23:59:59` : data_fim;
 
